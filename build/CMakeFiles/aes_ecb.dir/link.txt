@@ -1,0 +1,3 @@
+D:\CMake\bin\cmake.exe -E rm -f CMakeFiles\aes_ecb.dir/objects.a
+D:\mingw\bin\ar.exe qc CMakeFiles\aes_ecb.dir/objects.a @CMakeFiles\aes_ecb.dir\objects1.rsp
+D:\mingw\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\aes_ecb.dir/objects.a -Wl,--no-whole-archive -o aes_ecb.exe -Wl,--out-implib,libaes_ecb.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\aes_ecb.dir\linkLibs.rsp

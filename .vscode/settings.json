@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "bitset": "cpp",
+        "atomic": "cpp",
+        "*.tcc": "cpp",
+        "cstddef": "cpp",
+        "functional": "cpp",
+        "memory_resource": "cpp",
+        "fstream": "cpp",
+        "type_traits": "cpp",
+        "typeinfo": "cpp",
+        "cmath": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp"
+    }
+}

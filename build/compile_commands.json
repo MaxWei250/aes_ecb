@@ -1,0 +1,14 @@
+[
+{
+  "directory": "D:/Desktop/postgraduate/AES/aes_ecb/build",
+  "command": "D:\\mingw\\bin\\g++.exe   -g -o CMakeFiles\\aes_ecb.dir\\main.cpp.obj -c D:\\Desktop\\postgraduate\\AES\\aes_ecb\\main.cpp",
+  "file": "D:/Desktop/postgraduate/AES/aes_ecb/main.cpp",
+  "output": "CMakeFiles/aes_ecb.dir/main.cpp.obj"
+},
+{
+  "directory": "D:/Desktop/postgraduate/AES/aes_ecb/build",
+  "command": "D:\\mingw\\bin\\g++.exe   -g -o CMakeFiles\\aes_ecb.dir\\aes.cpp.obj -c D:\\Desktop\\postgraduate\\AES\\aes_ecb\\aes.cpp",
+  "file": "D:/Desktop/postgraduate/AES/aes_ecb/aes.cpp",
+  "output": "CMakeFiles/aes_ecb.dir/aes.cpp.obj"
+}
+]
