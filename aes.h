@@ -4,15 +4,16 @@
 #include <bitset>
 #include <string>
 #include "string.h"
+#include "zbase64.h"
 using namespace std;
 
 typedef bitset<8> byte_t;
 typedef bitset<32> word;
 
-#define KEYCODELENGTH 16 //*密钥长度
+#define KEYCODELENGTH 24 //*密钥长度
 #define PLAINCODELENGTH 16 //*明文长度
-const int Nr = 10;  //* AES-128需要 10 轮加密
-const int Nk = 4;   //* Nk 表示输入密钥的 word 个数,Nk*32=密钥bit数
+const int Nr = 12;  //* AES-128需要 10 轮加密
+const int Nk = 6;   //* Nk 表示输入密钥的 word 个数,Nk*32=密钥bit数
 //*S盒
 const byte_t S_Box[16][16] = {
 	{0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76},
@@ -64,9 +65,8 @@ class aes
 
         word exp_key[4*(Nr+1)];//* 扩展密钥
         void KeyExpansion(string strKey,word exp_key[4*(Nr+1)]);//*密钥扩展
-		void encrypt(string strSrc, word exp_key[4 * (Nr + 1)],unsigned char* cipher);
-		void decrypt(byte_t data[4*4],word exp_key[4*(Nr+1)]);//*解密
-		
+		string encrypt(string strSrc, word exp_key[4 * (Nr + 1)],unsigned char* cipher,int size_cipher);
+		string decrypt(string strSrc, word exp_key[4 * (Nr + 1)],unsigned char* plaintext,int& plainLen);
     private:
 		//*key expansion
         word byte2Word(byte_t& k1, byte_t& k2, byte_t& k3, byte_t& k4);
@@ -89,9 +89,11 @@ class aes
 
 		
 		void PlainPadding( unsigned char* pSrc, int nSrcLen );
+		string InvPlainPadding(unsigned char* pSrc,int srcLen,int& plainLen);
 		void PlainStringToHex(const char *pSrc, unsigned char *pDest,int& grouplen);
 
 		void col_convert(unsigned char mtx[4*4]);//*矩阵列转换
+		void byte_col_convert(byte_t mtx[4*4]);
 		void byte2char(byte_t* mtx,unsigned char* mtx_char,int mtx_len);//*byte转char
 
 		//*逆s盒变换
@@ -100,6 +102,8 @@ class aes
 		void InvShiftRows(byte_t mtx[4*4]);
 		//*逆列混淆
 		void InvMixColumns(byte_t mtx[4*4]);
+		//*128bit数据解密
+		void group_decrypt(unsigned char cipher_group[4*4],word exp_key[4*(Nr+1)],unsigned char* plain_group,int group);
 };
 
 

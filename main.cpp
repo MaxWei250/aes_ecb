@@ -6,22 +6,28 @@ int main()
 {
 	aes tool;
     ZBase64 base64;
-    string plain_str = "aaaaaaaaaaaaaaaaaaaaa";
+    string plain_str = "aaaaaaaaaaaaaaabaaaaa";
+    int plainLen = 0;
     unsigned char cipher[((strlen(plain_str.c_str())%16==0) ?(strlen(plain_str.c_str())+16) \
 	: ((int)(strlen(plain_str.c_str())/16)*16)+16)];
+    unsigned char plaintext[((strlen(plain_str.c_str())%16==0) ?(strlen(plain_str.c_str())+16) \
+    : ((int)(strlen(plain_str.c_str())/16)*16)+16)];
 
-    cout << hex << strlen(plain_str.c_str()) << endl;
     //*密钥扩展
-	tool.KeyExpansion("aaaaaaaaaaaaaaaa",tool.exp_key);
+	tool.KeyExpansion("aaaaaaaaaaaaaaaaaaaaaaaa",tool.exp_key);
     //*加密
-	tool.encrypt(plain_str,tool.exp_key,cipher);
-    
-    for(int i = 0; i < sizeof(cipher); i++)
+	string base64_cipher = tool.encrypt(plain_str,tool.exp_key,cipher,sizeof(cipher));
+
+    string strPlain = tool.decrypt(base64_cipher,tool.exp_key,plaintext,plainLen);
+
+    cout << "cipher is " << base64.Encode(cipher,sizeof(cipher))<< endl;
+
+    for(int i = 0; i < plainLen; i++)
     {
-        cout << hex << (int)cipher[i] << " ";
+        cout << hex << (int)plaintext[i] << " ";
     }
+    cout << endl << "plain is " << strPlain << endl;
     cout << endl;
-    
-    cout << base64.Encode(cipher,sizeof(cipher))<< endl;
+
     return 0;
 }

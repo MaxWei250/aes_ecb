@@ -86,15 +86,17 @@ word aes::T(word temp, int round)
 void aes::KeyExpansion(string strKey,word exp_key[4*(Nr+1)])
 {
 	unsigned char init_key[KEYCODELENGTH];
+	byte_t k1,k2,k3,k4;
+
 	KeyStringToHex( strKey.c_str(), init_key );
 	for(int i=0; i< 4*(Nr+1); ++i)//*循环4*(Nr+1)次，当为128bit的时候，循环44轮
 	{
 		if (i < Nk) //*前4个字直接赋值
 		{
-			byte_t k1 = (byte_t)init_key[Nk*i];
-			byte_t k2 = (byte_t)init_key[Nk*i+1];
-			byte_t k3 = (byte_t)init_key[Nk*i+2];
-			byte_t k4 = (byte_t)init_key[Nk*i+3];
+			k1 = (byte_t)init_key[4*i];
+			k2 = (byte_t)init_key[4*i+1];
+			k3 = (byte_t)init_key[4*i+2];
+			k4 = (byte_t)init_key[4*i+3];
 			exp_key[i] = byte2Word(k1, k2, k3, k4);
 		}
 		else if (i >= Nk && i%Nk == 0) //*发生为Nk倍数的情况
@@ -107,11 +109,10 @@ void aes::KeyExpansion(string strKey,word exp_key[4*(Nr+1)])
 		{
 			exp_key[i] = SubWord(exp_key[i-1]) ^ exp_key[i-Nk];
 		}
-		else//*i > 4
+		else if(i > Nk)//*i > 4
 		{
 			exp_key[i] = exp_key[i-1] ^ exp_key[i-Nk];
 		}
-		
 	}
 }
 /**
@@ -120,9 +121,9 @@ void aes::KeyExpansion(string strKey,word exp_key[4*(Nr+1)])
  * @param {word exp_key[4} *
  * @return {*}
  */
-//?改为输出hex+base64编码且任意长度的密文
-void aes::encrypt(string strSrc, word* exp_key,unsigned char* cipher)
+string aes::encrypt(string strSrc, word* exp_key,unsigned char* cipher,int size_cipher)
 {
+	ZBase64 tool;
 	//unsigned char data_temp[strlen(strSrc.c_str())+PLAINCODELENGTH];//*因为数组是静态空间，所以主动多申请一个正常明文的空间
 	unsigned char data_temp[((strlen(strSrc.c_str())%16==0) ?(strlen(strSrc.c_str())+16) \
 	: ((int)(strlen(strSrc.c_str())/16)*16)+16) ], data_reg[4*4];
@@ -174,12 +175,11 @@ void aes::encrypt(string strSrc, word* exp_key,unsigned char* cipher)
 		for(int i = 0; i < 16; i++)
 		{
 			cipher[i+group*16] = data_reg[i];
-			cout << hex << (int)data_reg[i] << " ";
 		}
-		cout << endl;
-		if(group == 1) return ;
 		group ++;//*移动到下一组
 	}
+
+	return tool.Encode(cipher,size_cipher);
 }
 /**
  * @description: rows shift
@@ -292,6 +292,15 @@ void aes::KeyStringToHex( const char* pSrc, unsigned char* pDest )
 		memcpy(pDest, pSrc, nSrcLen);
 	}
 	KeyPadding( pDest, nSrcLen );//*填充
+	// region : debug
+		/* cout << "KeyStringToHex: " << endl;
+		for(int i = 0; i < KEYCODELENGTH; i++)
+		{
+			cout << hex << (int)pDest[i] << " ";
+		}
+		cout << endl;
+		return ; */
+	// endregion : debug
 }
 //*填充模式：PKCS7
 void aes::KeyPadding( unsigned char* pSrc, int nSrcLen )
@@ -324,6 +333,45 @@ void aes::PlainStringToHex(const char *pSrc, unsigned char *pDest,int& grouplen)
 	grouplen = (nSrcLen/PLAINCODELENGTH) + 1; //*计算有几组128bit的数据
 }
 /**
+ * @description: 按照填充模式PKCS7进行解密
+ * @param {unsigned char*} pSrc
+ * @param {int} srcLen
+ * @param {int&} plainLen
+ * @return {*}
+ */
+string aes::InvPlainPadding(unsigned char* pSrc,int srcLen,int& plainLen)
+{
+	bool flag(0);
+	unsigned char temp(0);
+	string str;
+
+	for(int i = 0; i < srcLen; i++)
+	{
+		if(pSrc[i] == srcLen - i ) //*判断是否为填充数据
+		{
+			flag = 1;
+			temp = pSrc[i];
+			plainLen = i ;
+		}
+		else if ((flag==1) && (pSrc[i] == temp))
+		{
+			flag = 1;
+		}
+		else if(flag==1)
+        {
+            flag = 0;
+            plainLen = 0;
+        }
+        //cout << "i is " << dec << i << "  " << "pSrc[i] is " << hex << (int)pSrc[i] << endl;
+	}
+    //cout << "plain_len is "<< dec << (int)plain_len << endl;
+	for(int i = 0; i < plainLen; i++)
+	{
+		str += pSrc[i];
+	}
+	return str;
+}
+/**
  * @description: //*psk7 padding for plain text
  * @param {unsigned char} *pSrc:
  * @param {int} nSrcLen
@@ -353,6 +401,21 @@ void aes::PlainPadding(unsigned char *pSrc, int nSrcLen)
 void aes::col_convert(unsigned char mtx[4*4])
 {
 	unsigned char temp[4*4];
+	for (int i = 0; i < 4; i++)
+	{
+		temp[i] =    mtx[i*4];
+		temp[i+4] =  mtx[i*4+1];
+		temp[i+8] =  mtx[i*4+2];
+		temp[i+12] = mtx[i*4+3];
+	}
+	for (int i = 0; i < 4*4; i++)
+	{
+		mtx[i] = temp[i];
+	}
+}
+void aes::byte_col_convert(byte_t mtx[4*4])
+{
+	byte_t temp[4*4];
 	for (int i = 0; i < 4; i++)
 	{
 		temp[i] =    mtx[i*4];
@@ -428,14 +491,24 @@ void aes::InvMixColumns(byte_t mtx[4*4])
 	}
 }
 /**
- * @description: aes decrypt
- * @param {byte_t} data
+ * @description: decrypt one group 128bit data
+ * @param {unsigned char} cipher_group
  * @param {word} exp_key
+ * @param {unsigned char*} plain_group
+ * @param {int} group
  * @return {*}
  */
-void aes::decrypt(byte_t data[4*4],word exp_key[4*(Nr+1)])
+void aes::group_decrypt(unsigned char cipher_group[4*4],word exp_key[4*(Nr+1)],unsigned char* plain_group,int group)
 {
+	byte_t data[4*4];
 	word init_key[4];
+	col_convert(cipher_group);
+
+	for(int i = 0; i < 16; i++)
+	{
+		data[i] = (byte_t)cipher_group[i];
+	}
+
 	for (int i = 0; i < 4; i++)
 	{
 		init_key[i] = exp_key[4*Nr+i];
@@ -458,6 +531,48 @@ void aes::decrypt(byte_t data[4*4],word exp_key[4*(Nr+1)])
 	{
 		init_key[i] = exp_key[i];
 	}
+	
 	AddRoundKey(data, init_key);
-	//col_convert((unsigned char)data);
+
+	byte_col_convert(data);
+
+
+	for(int i = 0; i < 16; i++)
+	{
+		plain_group[i] = (unsigned char)data[i].to_ulong();
+	}
+}
+/**
+ * @description: decrypt
+ * @param {string} strSrc:base64 cipher
+ * @param {word exp_key[4} *
+ * @param {unsigned char*} plaintext
+ * @param {int&} plainLen
+ * @return {*}plain string
+ */
+string aes::decrypt(string strSrc, word exp_key[4 * (Nr + 1)],unsigned char* plaintext,int& plainLen)
+{
+	ZBase64 tool;
+	int cipher_len(0);
+	unsigned char group_data[16];//*src is cipher(16*x)
+	int group(0),group_len(0);
+	string strPlain;
+	string cipher_str = tool.Decode(strSrc.c_str(),strSrc.size(),cipher_len);
+	
+	memcpy(plaintext,cipher_str.c_str(),strlen(cipher_str.c_str()));
+
+	group_len = cipher_len/16;
+
+	while(group_len--){
+		for(int i = 0; i < 16; i++)
+		{
+			group_data[i] = plaintext[i+(group*16)];
+		}
+		group_decrypt(group_data,exp_key,&plaintext[group*16],group);
+		group ++;
+	}
+
+	strPlain=InvPlainPadding(plaintext,strlen(cipher_str.c_str()),plainLen);
+	
+	return strPlain;
 }
